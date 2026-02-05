@@ -1,45 +1,20 @@
 package org.firstinspires.ftc.teamcode;
 
-
 import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 
-import org.firstinspires.ftc.vision.VisionPortal;
-import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
-
 import static org.firstinspires.ftc.teamcode.Prism.GoBildaPrismDriver.LayerHeight;
-
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.Prism.Color;
 import org.firstinspires.ftc.teamcode.Prism.GoBildaPrismDriver;
 import org.firstinspires.ftc.teamcode.Prism.PrismAnimations;
 
-import java.util.concurrent.TimeUnit;
-
-/**
- * Auto shooter:
- * - Uses USB webcam AprilTag range for distance
- * - Applies 2-point linear correction to address "fall off" at longer distances
- * - Uses hardcoded RPM targets: 2500 @ 1m, 3300 @ 2m
- *
- * Hardware map names expected:
- *  - frontFlywheel (DcMotorEx)
- *  - backFlywheel  (DcMotorEx)
- *  - usb_1         (WebcamName)
- *
- * CONTROLS (gamepad1):
- *  - B: Spins the flywheels to the computed target RPM
- */
 @Configurable
 @TeleOp(name = "Blue Alliance Teleop", group = "Competition")
 public class blueOpmode1 extends OpMode {
@@ -51,10 +26,6 @@ public class blueOpmode1 extends OpMode {
     public Servo lbstop,rbstop,lhoodtilt, rhoodtilt;
     public final double triggerDeadzone = 0.2;
     public final double hoodDown = 0.02;
-
-    // --- VISION ---
-    private VisionPortal visionPortal;
-    private AprilTagProcessor aprilTagProcessor;
 
     // --- MOTOR VELOCITY CONVERSION ---
 
@@ -69,8 +40,6 @@ public class blueOpmode1 extends OpMode {
     private static final double INCHES_PER_METER = 39.3701;
 
     // --- YOUR CAL POINTS ---
-    // Observed webcam ftcPose.range at 1m ≈ 40 in; at 2m ≈ 75-78 in (use mid ~76.5 for fit)
-    // True distances: 1m = 39.37 in; 2m = 78.74 in
     private static final double RAW_AT_1M_IN = 40.0;
     private static final double RAW_AT_2M_IN = 76.5;
 
@@ -82,10 +51,10 @@ public class blueOpmode1 extends OpMode {
     private static final double DIST_B = TRUE_1M_IN - (DIST_A * RAW_AT_1M_IN);
 
     // --- RPM TARGETS (HARDCODED) ---
-    public static double RPM_AT_1M = 2100.0;
-    public static double RPM_AT_2M = 2500.0;
-    public static double TILT_AT_1M = .24;
-    public static double TILT_AT_2M = .54;
+    public static double RPM_AT_1M = 2300.0;
+    public static double RPM_AT_2M = 2660.0;
+    public static double TILT_AT_1M = .34;
+    public static double TILT_AT_2M = .55;
     public static double RPM_M, RPM_C, TILT_M, TILT_C;
 
     public static void updateModels() {
@@ -101,11 +70,11 @@ public class blueOpmode1 extends OpMode {
     private static final double MIN_RPM = 0.0;
     private static final double MAX_RPM = 5800.0;
 
-    private static final double MAX_TILT =  0.6;
+    private static final double MAX_TILT =  0.55;
     private static final double MIN_TILT = 0.01;
 
     // --- LIVE DATA ---
-    private double yawDegrees = 0.0;
+    private double yawDegrees = 0.8;
     private double distanceMeters = 0.0;
     private double targetFlywheelRPM = 0.0;
     private double targetHoodTilt = 0.0;
@@ -134,13 +103,9 @@ public class blueOpmode1 extends OpMode {
     public static double kF = 1.06;
 
     long lastTagTime = 0;
-    static final long TAG_TIMEOUT_MS = 2000;
-
+    static final long TAG_TIMEOUT_MS = 1000;
 
     Limelight3A limelight;
-    private IMU imu;
-
-
 
     @Override
     public void init() {
@@ -157,7 +122,6 @@ public class blueOpmode1 extends OpMode {
         lbstop = hardwareMap.get(Servo.class, "lbstop");
         rbstop = hardwareMap.get(Servo.class, "rbstop");
         prism = hardwareMap.get(GoBildaPrismDriver.class,"prism");
-
 
         // --- MOTOR SETUP ---
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
@@ -191,9 +155,6 @@ public class blueOpmode1 extends OpMode {
         telemetry.update();
 
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        imu = hardwareMap.get(IMU.class, "imu");
-        RevHubOrientationOnRobot revHubOrientationOnRobot = new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.RIGHT, RevHubOrientationOnRobot.UsbFacingDirection.UP);
-        imu.initialize(new IMU.Parameters(revHubOrientationOnRobot));
         limelight.setPollRateHz(100); // This sets how often we ask Limelight for data (100 times per second)
         limelight.pipelineSwitch(0); // Switch to pipeline number 1
     }
@@ -204,6 +165,7 @@ public class blueOpmode1 extends OpMode {
         prism.insertAndUpdateAnimation(LayerHeight.LAYER_0, solidPink);
         limelight.start();
     }
+
     @Override
     public void loop() {
 
@@ -230,7 +192,6 @@ public class blueOpmode1 extends OpMode {
             lastGoodYaw = result.getTx();
             lastTagTime = System.currentTimeMillis();
         }
-
 
         // -------------------------------
         // 2) CONTROLS AND BOOLEAN LOGIC
@@ -264,6 +225,10 @@ public class blueOpmode1 extends OpMode {
             flywheel.setVelocity(-2000);
             rbstop.setPosition(0);
             lbstop.setPosition(0);
+        } else if (gamepad2.left_trigger > 0.2){
+            intake.setVelocity((intakeTargetRPM * 145.1)/60);
+            rbstop.setPosition(0);
+            lbstop.setPosition(0);
         } else if ((gamepad2.right_trigger < triggerDeadzone) && tagRecentlySeen) {
             flywheel.setVelocity(1);
             lhoodtilt.setPosition(lastGoodHoodTilt);
@@ -271,6 +236,9 @@ public class blueOpmode1 extends OpMode {
             // fully shuts down the motors and drops the hood if the april tag has not been seen for too long, under the tagRecentlySeen function used in goodForLaunch
         } else {
             flywheel.setVelocity(0);
+            intake.setVelocity(0);
+            lbstop.setPosition(0.15);
+            rbstop.setPosition(0.15);
             lhoodtilt.setPosition(hoodDown);
             rhoodtilt.setPosition(hoodDown);
         }
@@ -291,7 +259,6 @@ public class blueOpmode1 extends OpMode {
 
         } else {
             rx = gamepad1.right_stick_x;
-            LAST_ERROR_YAW = 0;
         }
 
 // Reads joystick values for our Mecanum logic
@@ -326,15 +293,15 @@ public class blueOpmode1 extends OpMode {
         double deltaTime = currentTime - lastLoopTime;
         lastLoopTime = currentTime;
 
-        if (gamepad2.left_trigger > 0.2) {
-            intake.setVelocity((intakeTargetRPM * 145.1) / 60);
-            rbstop.setPosition(0);
-            lbstop.setPosition(0);
-        } else {
-            intake.setVelocity(0);
-            rbstop.setPosition(0.15);
-            lbstop.setPosition(0.15);
-        }
+//        if (gamepad2.left_trigger > 0.2) {
+//            intake.setVelocity((intakeTargetRPM * 145.1) / 60);
+//            rbstop.setPosition(0);
+//            lbstop.setPosition(0);
+//        } else {
+//            intake.setVelocity(0);
+//            rbstop.setPosition(0.15);
+//            lbstop.setPosition(0.15);
+//        }
         flywheel.Update();
         // -------------------------------
         // 3) TELEMETRY
@@ -357,9 +324,9 @@ public class blueOpmode1 extends OpMode {
         } else if (gamepad2.leftBumperWasPressed()) {
             RPM_AT_1M -= 50;
         } else if (gamepad2.dpadRightWasPressed()){
-            RPM_AT_2M += 50;
+            RPM_AT_2M += 10;
         } else if (gamepad2.dpadLeftWasPressed()){
-            RPM_AT_2M -= 50;
+            RPM_AT_2M -= 10;
         }
 
         telemetry.update();
