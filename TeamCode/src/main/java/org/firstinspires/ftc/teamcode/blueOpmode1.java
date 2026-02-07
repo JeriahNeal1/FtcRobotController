@@ -11,6 +11,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import static org.firstinspires.ftc.teamcode.Prism.GoBildaPrismDriver.LayerHeight;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.Prism.Color;
 import org.firstinspires.ftc.teamcode.Prism.GoBildaPrismDriver;
 import org.firstinspires.ftc.teamcode.Prism.PrismAnimations;
@@ -30,7 +31,7 @@ public class blueOpmode1 extends OpMode {
     // --- MOTOR VELOCITY CONVERSION ---
 
     GoBildaPrismDriver prism;
-
+    GoBildaPinpointDriver odo; // Declare OpMode member for the Odometry Computer
     PrismAnimations.Solid solidBlue = new PrismAnimations.Solid(Color.BLUE);
     PrismAnimations.Solid solidPink = new PrismAnimations.Solid(Color.PINK);
     private static final double TICKS_PER_REV = 28.0;
@@ -52,7 +53,7 @@ public class blueOpmode1 extends OpMode {
 
     // --- RPM TARGETS (HARDCODED) ---
     public static double RPM_AT_1M = 2300.0;
-    public static double RPM_AT_2M = 2660.0;
+    public static double RPM_AT_2M = 2650.0;
     public static double TILT_AT_1M = .34;
     public static double TILT_AT_2M = .55;
     public static double RPM_M, RPM_C, TILT_M, TILT_C;
@@ -87,7 +88,7 @@ public class blueOpmode1 extends OpMode {
     double lastGoodHoodTilt = 0.02;
     // we are not storing a starting value for lastGoodYaw since it is so situation-dependent
     double lastGoodYaw;
-    public static double TARGET_YAW = -1;  // square to tag
+    public static double TARGET_YAW = -0.7;  // 0.8 starting is good
     double ERROR_YAW;
 
     double LAST_ERROR_YAW;
@@ -98,9 +99,10 @@ public class blueOpmode1 extends OpMode {
 
     public boolean launchOverride;
     public double rx;
-    public static double kP = 0.02;
-    public static double kD = 0.001;
-    public static double kF = 1.06;
+    public static double kP = 0.024;
+    public static double kD = 0.01;
+    public static double kF = 1.2;
+    public static double turnMultiplier = 0.1;
 
     long lastTagTime = 0;
     static final long TAG_TIMEOUT_MS = 1000;
@@ -122,6 +124,11 @@ public class blueOpmode1 extends OpMode {
         lbstop = hardwareMap.get(Servo.class, "lbstop");
         rbstop = hardwareMap.get(Servo.class, "rbstop");
         prism = hardwareMap.get(GoBildaPrismDriver.class,"prism");
+        odo = hardwareMap.get(GoBildaPinpointDriver.class,"odo");
+        odo.setOffsets(16, 124, DistanceUnit.MM);
+        odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);
+        odo.resetPosAndIMU();
 
         // --- MOTOR SETUP ---
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
@@ -148,6 +155,8 @@ public class blueOpmode1 extends OpMode {
         solidPink.setBrightness(100);
         solidPink.setStartIndex(0);
         solidPink.setStopIndex(36);
+
+
 
         prism.insertAndUpdateAnimation(LayerHeight.LAYER_0, solidBlue);
 
@@ -220,15 +229,6 @@ public class blueOpmode1 extends OpMode {
             lhoodtilt.setPosition(lastGoodHoodTilt);
             rhoodtilt.setPosition(lastGoodHoodTilt);
             // Shuts off motors when the trigger isn't pulled, but keeps the hood adjusting to keep ready to fire(mainly cause it looks cool)
-        }else if (gamepad2.left_trigger < 0.2 && gamepad2.y) {
-            intake.setVelocity((ReverseIntake * 145.1) / 60);
-            flywheel.setVelocity(-2000);
-            rbstop.setPosition(0);
-            lbstop.setPosition(0);
-        } else if (gamepad2.left_trigger > 0.2){
-            intake.setVelocity((intakeTargetRPM * 145.1)/60);
-            rbstop.setPosition(0);
-            lbstop.setPosition(0);
         } else if ((gamepad2.right_trigger < triggerDeadzone) && tagRecentlySeen) {
             flywheel.setVelocity(1);
             lhoodtilt.setPosition(lastGoodHoodTilt);
@@ -236,11 +236,23 @@ public class blueOpmode1 extends OpMode {
             // fully shuts down the motors and drops the hood if the april tag has not been seen for too long, under the tagRecentlySeen function used in goodForLaunch
         } else {
             flywheel.setVelocity(0);
+            lhoodtilt.setPosition(hoodDown);
+            rhoodtilt.setPosition(hoodDown);
+        }
+
+        if (gamepad2.left_trigger > 0.2){
+            lbstop.setPosition(0);
+            rbstop.setPosition(0);
+            intake.setVelocity((intakeTargetRPM * 145.1)/60);
+        } else if (gamepad2.left_trigger < 0.2 && gamepad2.y) {
+            intake.setVelocity((ReverseIntake * 145.1) / 60);
+            flywheel.setVelocity(-2000);
+            rbstop.setPosition(0);
+            lbstop.setPosition(0);
+        } else if (gamepad2.left_trigger < 0.2) {
             intake.setVelocity(0);
             lbstop.setPosition(0.15);
             rbstop.setPosition(0.15);
-            lhoodtilt.setPosition(hoodDown);
-            rhoodtilt.setPosition(hoodDown);
         }
         flywheel.Update();
 
@@ -253,6 +265,7 @@ public class blueOpmode1 extends OpMode {
 // align the robot to the april tag on the goal.
 
         if (gamepad1.left_bumper && tagRecentlySeen){
+            TARGET_YAW = 0.8;
             ERROR_YAW = (TARGET_YAW - yawDegrees);
             rx = (ERROR_YAW * kP) - kD*(ERROR_YAW - LAST_ERROR_YAW) * kF;
             LAST_ERROR_YAW = ERROR_YAW;
@@ -293,15 +306,6 @@ public class blueOpmode1 extends OpMode {
         double deltaTime = currentTime - lastLoopTime;
         lastLoopTime = currentTime;
 
-//        if (gamepad2.left_trigger > 0.2) {
-//            intake.setVelocity((intakeTargetRPM * 145.1) / 60);
-//            rbstop.setPosition(0);
-//            lbstop.setPosition(0);
-//        } else {
-//            intake.setVelocity(0);
-//            rbstop.setPosition(0.15);
-//            lbstop.setPosition(0.15);
-//        }
         flywheel.Update();
         // -------------------------------
         // 3) TELEMETRY
@@ -334,16 +338,8 @@ public class blueOpmode1 extends OpMode {
 
     @Override
     public void stop() {
-        // Shutdown
         prism.clearAllAnimations();
-        flywheel.setVelocity(0);
-        frontLeft.setPower(0);
-        frontRight.setPower(0);
-        backLeft.setPower(0);
-        backRight.setPower(0);
-        lhoodtilt.setPosition(0.02);
-        rhoodtilt.setPosition(0.02);
-        flywheel.Update();
+        prism.updateAllAnimations();
     }
     // logic behind our clamp calls, constrains output between our high and low maxes we set when we call clamp
     private static double clamp(double v, double lo, double hi) {
