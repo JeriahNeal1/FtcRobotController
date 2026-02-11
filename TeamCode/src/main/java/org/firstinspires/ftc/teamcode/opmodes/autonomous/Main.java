@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Autonomous(name = "MainAuto", group = "Autonomous")
-public class MainAuto extends OpMode {
+public class Main extends OpMode {
     private final ElapsedTime runtime = new ElapsedTime();
     private final List<Subsystem> subsystems = new ArrayList<>();
 
@@ -56,7 +56,7 @@ public class MainAuto extends OpMode {
         // HuskyLens runs tag recognition (not VisionPortal) to support later red/blue goal selection by tag IDs.
         // Two odometry pods are in use now, with third pod support ready through Configuration.ODOMETRY_Z.
         telemetry.addData("Init", "MainAuto initialized");
-        telemetry.addData("Primary Encoder Motor", Configuration.PRIMARY_DRIVE_ENCODER_MOTOR_NAME);
+        telemetry.addData("Primary Encoder Motor", Configuration.PRIMARY_DRIVE_ENCODER_MOTOR);
         telemetry.addData("Odometry", "2 pods installed; 3rd supported");
         telemetry.update();
     }
@@ -139,17 +139,17 @@ public class MainAuto extends OpMode {
             return null;
         }
 
-        String primaryName = Configuration.PRIMARY_DRIVE_ENCODER_MOTOR_NAME;
-        if (Configuration.LEFT_FRONT_MOTOR_NAME.equals(primaryName)) {
+        String primaryName = Configuration.PRIMARY_DRIVE_ENCODER_MOTOR;
+        if (Configuration.LEFT_FRONT_MOTOR.equals(primaryName)) {
             return robotHardware.leftFrontMotor;
         }
-        if (Configuration.LEFT_BACK_MOTOR_NAME.equals(primaryName)) {
+        if (Configuration.LEFT_BACK_MOTOR.equals(primaryName)) {
             return robotHardware.leftBackMotor;
         }
-        if (Configuration.RIGHT_FRONT_MOTOR_NAME.equals(primaryName)) {
+        if (Configuration.RIGHT_FRONT_MOTOR.equals(primaryName)) {
             return robotHardware.rightFrontMotor;
         }
-        if (Configuration.RIGHT_BACK_MOTOR_NAME.equals(primaryName)) {
+        if (Configuration.RIGHT_BACK_MOTOR.equals(primaryName)) {
             return robotHardware.rightBackMotor;
         }
         return robotHardware.leftFrontMotor;
