@@ -27,6 +27,7 @@ public class TurretRed extends OpMode {
     public static double kP = 0.01;
     public static double MAX_ANGLE = 170;
     public static double MIN_ANGLE = -170;
+    double magnitude;
     double ticksPerTurretRev = 537.7 * (200.0 / 86.0);
 
     @Override
@@ -50,13 +51,14 @@ public class TurretRed extends OpMode {
     public void loop() {
         double x = gamepad2.right_stick_x;
         double y = -gamepad2.right_stick_y;
-        double magnitude = Math.hypot(x, y);
+        double stickAngle = Math.toDegrees(Math.atan2(x, y));
+
+// If stick is near center, don't update target
+        if (magnitude > 0.2) {
+            targetAngle = stickAngle;
+        }
 
         turretAngle = turretMotor.getCurrentPosition();
-
-        if (magnitude > 0.2) {
-            targetAngle = Math.toDegrees(Math.atan2(x, y));
-        }
 
 // Clamp target inside safe range
         targetAngle = Math.max(MIN_ANGLE, Math.min(MAX_ANGLE, targetAngle));
