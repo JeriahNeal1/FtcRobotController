@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.gamepad2;
-
 import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
@@ -20,8 +18,8 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
  * target is present, automatic aiming always takes priority over manual input.
  */
 @Configurable
-@TeleOp(name = "Turret Control", group = "Competition")
-public class TurretControl extends OpMode {
+@TeleOp(name = "Turret Control Bot", group = "Competition")
+public class TurretBot extends OpMode {
     // Hardware
     private DcMotorEx turretMotor;
     private Limelight3A limelight;
@@ -30,14 +28,12 @@ public class TurretControl extends OpMode {
      * The radius of the large gear that the turret sits on, in centimeters.
      * This is used to derive the overall gear ratio.
      */
-    @Configurable
     public static double gearRadiusTurretCm = 8.5;
 
     /**
      * The radius of the motor's pinion gear, in centimeters.  Changing this
      * affects how many motor encoder ticks correspond to one turret revolution.
      */
-    @Configurable
     public static double gearRadiusMotorCm = 3.5;
 
     /**
@@ -45,7 +41,6 @@ public class TurretControl extends OpMode {
      * motor this is typically 537.7 ticks per revolution.  If you change
      * motors, update this accordingly.
      */
-    @Configurable
     public static double ticksPerMotorRev = 537.7;
 
     /**
@@ -53,14 +48,12 @@ public class TurretControl extends OpMode {
      * output of this controller directly sets motor power.  Tune this so the
      * turret is responsive but doesn’t oscillate.
      */
-    @Configurable
     public static double kP = 1.0;
 
     /**
      * Joystick deadband.  If the magnitude of the joystick vector is below
      * this value, manual inputs are ignored and the previous target is held.
      */
-    @Configurable
     public static double deadband = 0.2;
 
     /**
@@ -70,14 +63,12 @@ public class TurretControl extends OpMode {
      * toward the robot’s left side (counterclockwise), and negative angles
      * point right (clockwise).
      */
-    @Configurable
     public static double maxAngleDeg = 170.0;
 
     /**
      * Lower soft limit for the turret in degrees.  This should be negative
      * (e.g. -170).  See {@link #maxAngleDeg} for the coordinate system.
      */
-    @Configurable
     public static double minAngleDeg = -170.0;
 
     // Derived constants (updated in init)
