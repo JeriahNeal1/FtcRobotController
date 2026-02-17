@@ -40,8 +40,8 @@ public class RobotHardwareConfig {
     public static double TURRET_TICKS_PER_MOTOR_REV = 537.7;
     public static double TURRET_KP = 1.0;
     public static double TURRET_JOYSTICK_DEADBAND = 0.2;
-    public static double TURRET_MAX_ANGLE_DEG = 170.0;
-    public static double TURRET_MIN_ANGLE_DEG = -170.0;
+    public static double TURRET_MAX_ANGLE_DEG = 120.0;
+    public static double TURRET_MIN_ANGLE_DEG = -120.0;
 
     // Limelight constants
     public static int LIMELIGHT_POLL_RATE_HZ = 100;
