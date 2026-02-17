@@ -30,13 +30,18 @@ public class DualPidMotor {
         bottomFlywheel.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
 
     }
+
+    public DualPidMotor(HardwareMap hardwareMap) {
+        this(hardwareMap, RobotHardwareConfig.TOP_FLYWHEEL_MOTOR_NAME, RobotHardwareConfig.BOTTOM_FLYWHEEL_MOTOR_NAME);
+    }
+
     public void setVelocity(double targetRPM){
         this.targetRPM = targetRPM;
     }
 
     public void Update(){
         // Takes the Average of both motors' speeds in ticks per second and converts to RPM
-     double targetVelocity = (targetRPM*28)/60;
+     double targetVelocity = RobotHardwareConfig.flywheelRpmToTicksPerSecond(targetRPM);
         F = kf * targetRPM;
         PIDFCoefficients pidfCoefficients = new PIDFCoefficients(P,0,0, F);
         topFlywheel.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);

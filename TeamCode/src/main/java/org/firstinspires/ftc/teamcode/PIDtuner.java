@@ -16,11 +16,12 @@ import com.qualcomm.robotcore.hardware.Servo;
 // though, which while it is good its not perfect and going full custom and only using encoders for measurement is better.
 @TeleOp
 public class PIDtuner extends OpMode {
+    private final RobotHardwareConfig robot = new RobotHardwareConfig();
     public DcMotorEx topFlywheel, bottomFlywheel, intake;
     public Servo lhoodtilt;
 
     public double targetRPM = 2600;
-    public double highVelocity = ((targetRPM * 28)/60);
+    public double highVelocity = RobotHardwareConfig.flywheelRpmToTicksPerSecond(targetRPM);
     public double lowVelocity = 900;
     public double intakeTargetRPM = 500;
 
@@ -33,15 +34,14 @@ double F = 14.1;
 
     @Override
     public void init(){
-        topFlywheel = hardwareMap.get(DcMotorEx.class, "topflywheel");
-        bottomFlywheel = hardwareMap.get(DcMotorEx.class, "bottomflywheel");
-        topFlywheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        topFlywheel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        bottomFlywheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        bottomFlywheel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        topFlywheel.setDirection(DcMotor.Direction.REVERSE);
-        intake = hardwareMap.get(DcMotorEx.class, "intake");
-        lhoodtilt = hardwareMap.get(Servo.class, "lhoodtilt");
+        robot.initTopBottomFlywheels(hardwareMap, true);
+        robot.initIntake(hardwareMap);
+        robot.initHoodServos(hardwareMap);
+
+        topFlywheel = robot.topFlywheel;
+        bottomFlywheel = robot.bottomFlywheel;
+        intake = robot.intake;
+        lhoodtilt = robot.lhoodtilt;
 
 
 
@@ -51,10 +51,7 @@ double F = 14.1;
         intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        intake.setDirection(DcMotorSimple.Direction.REVERSE);
-        lhoodtilt.setDirection(Servo.Direction.REVERSE);
-
-        lhoodtilt.setPosition(0.02);
+        lhoodtilt.setPosition(RobotHardwareConfig.SHOOTER_HOOD_DOWN);
 
     }
      @Override
@@ -89,8 +86,8 @@ double F = 14.1;
          }
 
          if (gamepad1.left_trigger > 0.2){
-             intake.setVelocity((intakeTargetRPM * 145.1)/60);
-         }
+             intake.setVelocity(RobotHardwareConfig.intakeRpmToTicksPerSecond(intakeTargetRPM));
+          }
          else {
              intake.setVelocity(0);
          }

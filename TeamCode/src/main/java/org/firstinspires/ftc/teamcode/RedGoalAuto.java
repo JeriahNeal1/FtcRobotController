@@ -18,10 +18,12 @@ import org.firstinspires.ftc.teamcode.Prism.Color;
 import org.firstinspires.ftc.teamcode.Prism.GoBildaPrismDriver;
 import org.firstinspires.ftc.teamcode.Prism.PrismAnimations;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.subsystems.ShooterSubsystem;
 
 @Configurable
 @Autonomous(name = "RedGoalAuto", group = "Competition")
 public class RedGoalAuto extends OpMode {
+    private final RobotHardwareConfig robot = new RobotHardwareConfig();
     private Follower follower; // Pedro Pathing follower instance
     private Timer pathTimer;
     ElapsedTime stateTimer = new ElapsedTime();
@@ -53,11 +55,10 @@ public class RedGoalAuto extends OpMode {
         END
     }
 
-    private DualPidMotor flywheel;
+    private ShooterSubsystem shooterSubsystem;
     private DcMotorEx intake;
-    private Servo lbstop, rbstop, lhoodtilt, rhoodtilt;
-    private static final double MIN_TILT = 0.02;
-    private static double HOOD_TILT = .34;
+    private Servo lbstop, rbstop;
+        private static double HOOD_TILT = .34;
     private static double FLYWHEEL_RPM = 2300;
     public static double SHOOT_TIME = 3400;
     public static double INTAKE_RPM = 575;
@@ -140,24 +141,22 @@ public class RedGoalAuto extends OpMode {
     public void statePathUpdate(){
         switch(pathState){
             case DRIVE_STARTPOS_SHOOTPOS:
-                flywheel.setVelocity(FLYWHEEL_RPM);
-                lhoodtilt.setPosition(HOOD_TILT);
-                rhoodtilt.setPosition(HOOD_TILT);
+                setFlywheelRpm(FLYWHEEL_RPM);
+                setHoodServo(HOOD_TILT);
                 follower.followPath(startdriveshoot, false);
                 setPathState(PathState.SHOOT);
                 stateTimer.reset();
                 break;
             case SHOOT:
                 if (!follower.isBusy()){
-                    intake.setVelocity((145.1 * INTAKE_SHOOT_RPM)/60);
+                    intake.setVelocity(RobotHardwareConfig.intakeRpmToTicksPerSecond(INTAKE_SHOOT_RPM));
                     lbstop.setPosition(0);
                     rbstop.setPosition(0);
 
                     if (stateTimer.milliseconds() > SHOOT_TIME + 50) {
-                        flywheel.setVelocity(0);
+                        setFlywheelRpm(0);
                         intake.setVelocity(0);
-                        lhoodtilt.setPosition(0.02);
-                        rhoodtilt.setPosition(0.02);
+                        setHoodServo(0.02);
                         follower.followPath(drivetocloseload);
                         setPathState(PathState.DRIVE_SHOOTPOS_LOAD1POS);
                     }
@@ -165,14 +164,14 @@ public class RedGoalAuto extends OpMode {
                 break;
             case DRIVE_SHOOTPOS_LOAD1POS:
                 if (!follower.isBusy()) {
-                    flywheel.setVelocity(-FLYWHEEL_RPM);
+                    setFlywheelRpm(-FLYWHEEL_RPM);
                     setPathState(PathState.CLOSELOAD);
                     stateTimer.reset();
                 }
                 break;
             case CLOSELOAD:
                 if (!follower.isBusy()){
-                    intake.setVelocity((145.1*INTAKE_RPM)/60);
+                    intake.setVelocity(RobotHardwareConfig.intakeRpmToTicksPerSecond(INTAKE_RPM));
                     lbstop.setPosition(0.13);
                     rbstop.setPosition(0.13);
                     follower.followPath(closeload, 0.8, false);
@@ -208,18 +207,16 @@ public class RedGoalAuto extends OpMode {
                 }
                 break;
             case SHOOT1:
-                lhoodtilt.setPosition(HOOD_TILT);
-                rhoodtilt.setPosition(HOOD_TILT);
-                flywheel.setVelocity(FLYWHEEL_RPM);
+                setHoodServo(HOOD_TILT);
+                setFlywheelRpm(FLYWHEEL_RPM);
                 if (!follower.isBusy()){
-                    intake.setVelocity((145.1 * INTAKE_SHOOT_RPM)/60);
+                    intake.setVelocity(RobotHardwareConfig.intakeRpmToTicksPerSecond(INTAKE_SHOOT_RPM));
                     lbstop.setPosition(0);
                     rbstop.setPosition(0);
 
                     if (stateTimer.milliseconds() > SHOOT_TIME - 350) {
-                        flywheel.setVelocity(0);
-                        lhoodtilt.setPosition(0.02);
-                        rhoodtilt.setPosition(0.02);
+                        setFlywheelRpm(0);
+                        setHoodServo(0.02);
                         intake.setVelocity(0);
                         follower.followPath(drivetomiddleload);
                         stateTimer.reset();
@@ -228,11 +225,11 @@ public class RedGoalAuto extends OpMode {
                 }
                 break;
             case DRIVE_SHOOTPOS_LOAD2POS:
-                flywheel.setVelocity(-FLYWHEEL_RPM);
+                setFlywheelRpm(-FLYWHEEL_RPM);
                 lbstop.setPosition(0.14);
                 rbstop.setPosition(0.14);
                 if (!follower.isBusy()) {
-                    intake.setVelocity((145.1 * INTAKE_RPM)/60);
+                    intake.setVelocity(RobotHardwareConfig.intakeRpmToTicksPerSecond(INTAKE_RPM));
                     follower.followPath(middleload, 0.8, false);
                     stateTimer.reset();
                     setPathState(PathState.MIDDLELOAD);
@@ -253,24 +250,23 @@ public class RedGoalAuto extends OpMode {
                     setPathState(PathState.DRIVE_MIDDLELOADPOS_SHOOTPOS);
                 }
             case DRIVE_MIDDLELOADPOS_SHOOTPOS:
-                flywheel.setVelocity(FLYWHEEL_RPM);
+                setFlywheelRpm(FLYWHEEL_RPM);
                 if (!follower.isBusy()) {
                     stateTimer.reset();
-                    lhoodtilt.setPosition(HOOD_TILT);
-                    rhoodtilt.setPosition(HOOD_TILT);
+                    setHoodServo(HOOD_TILT);
                     setPathState(PathState.SHOOT2);
                 }
                 break;
 
             case SHOOT2:
-                flywheel.setVelocity(FLYWHEEL_RPM);
+                setFlywheelRpm(FLYWHEEL_RPM);
                 if (!follower.isBusy()){
-                    intake.setVelocity((145.1 * INTAKE_SHOOT_RPM)/60);
+                    intake.setVelocity(RobotHardwareConfig.intakeRpmToTicksPerSecond(INTAKE_SHOOT_RPM));
                     lbstop.setPosition(0);
                     rbstop.setPosition(0);
 
                     if (stateTimer.milliseconds() > SHOOT_TIME - 1500) {
-                        flywheel.setVelocity(0);
+                        setFlywheelRpm(0);
                         intake.setVelocity(0);
                         setPathState(PathState.DRIVE_SHOOTPOS_LOAD3POS);
                         follower.followPath(drivetofarload);
@@ -278,9 +274,8 @@ public class RedGoalAuto extends OpMode {
                 }
                 break;
             case DRIVE_SHOOTPOS_LOAD3POS:
-                lhoodtilt.setPosition(0.02);
-                rhoodtilt.setPosition(0.02);
-                flywheel.setVelocity(-FLYWHEEL_RPM);
+                setHoodServo(0.02);
+                setFlywheelRpm(-FLYWHEEL_RPM);
                 lbstop.setPosition(0.12);
                 rbstop.setPosition(0.12);
                 if (!follower.isBusy()) {
@@ -290,7 +285,7 @@ public class RedGoalAuto extends OpMode {
                 break;
             case FARLOAD:
                 if (!follower.isBusy()){
-                    intake.setVelocity((145.1*INTAKE_RPM)/60);
+                    intake.setVelocity(RobotHardwareConfig.intakeRpmToTicksPerSecond(INTAKE_RPM));
                     follower.followPath(farload, 0.7, false);
                     setPathState(PathState.DRIVE_FARLOADPOS_SHOOTPOS);
                     stateTimer.reset();
@@ -299,9 +294,8 @@ public class RedGoalAuto extends OpMode {
             case DRIVE_FARLOADPOS_SHOOTPOS:
                 if (!follower.isBusy()){
 
-                    flywheel.setVelocity(FLYWHEEL_RPM);
-                    lhoodtilt.setPosition(HOOD_TILT);
-                    rhoodtilt.setPosition(HOOD_TILT);
+                    setFlywheelRpm(FLYWHEEL_RPM);
+                    setHoodServo(HOOD_TILT);
                     intake.setVelocity(0);
                     lbstop.setPosition(.15);
                     rbstop.setPosition(.15);
@@ -313,14 +307,13 @@ public class RedGoalAuto extends OpMode {
                 break;
             case SHOOT3:
                 if (!follower.isBusy()){
-                    intake.setVelocity((145.1 * INTAKE_SHOOT_RPM)/60);
+                    intake.setVelocity(RobotHardwareConfig.intakeRpmToTicksPerSecond(INTAKE_SHOOT_RPM));
                     lbstop.setPosition(0);
                     rbstop.setPosition(0);
 
                     if (stateTimer.milliseconds() > SHOOT_TIME+800) {
-                        lhoodtilt.setPosition(0.02);
-                        rhoodtilt.setPosition(0.02);
-                        flywheel.setVelocity(0);
+                        setHoodServo(0.02);
+                        setFlywheelRpm(0);
                         intake.setVelocity(0);
                         follower.followPath(end, true);
                         setPathState(PathState.END);
@@ -336,6 +329,16 @@ public class RedGoalAuto extends OpMode {
         }
     }
 
+    private void setFlywheelRpm(double rpm) {
+        shooterSubsystem.setManualMode();
+        shooterSubsystem.setManualFlywheelTargetRpm(rpm);
+    }
+
+    private void setHoodServo(double servoPosition) {
+        shooterSubsystem.setManualMode();
+        shooterSubsystem.setManualHoodTargetServo(servoPosition);
+    }
+
     public void setPathState(PathState newState){
         pathState = newState;
         pathTimer.resetTimer();
@@ -346,21 +349,20 @@ public class RedGoalAuto extends OpMode {
         pathState = PathState.DRIVE_STARTPOS_SHOOTPOS;
         pathTimer = new Timer();
         follower = Constants.createFollower(hardwareMap);
-        flywheel = new DualPidMotor (hardwareMap, "topflywheel", "bottomflywheel");
-        lhoodtilt = hardwareMap.get(Servo.class, "lhoodtilt");
-        rhoodtilt = hardwareMap.get(Servo.class, "rhoodtilt");
-        intake = hardwareMap.get(DcMotorEx.class, "intake");
-        lbstop = hardwareMap.get(Servo.class, "lbstop");
-        rbstop = hardwareMap.get(Servo.class, "rbstop");
-        prism = hardwareMap.get(GoBildaPrismDriver.class,"prism");
+        shooterSubsystem = new ShooterSubsystem(robot);
+        shooterSubsystem.init(hardwareMap, RobotHardwareConfig.LIMELIGHT_RED_TELEOP_PIPELINE);
+        shooterSubsystem.setManualMode();
+        robot.initIntake(hardwareMap);
+        robot.initBeamStopServos(hardwareMap);
+        robot.initPrism(hardwareMap);
+        intake = robot.intake;
+        lbstop = robot.lbstop;
+        rbstop = robot.rbstop;
+        prism = robot.prism;
 
-        intake.setDirection(DcMotor.Direction.REVERSE);
-        rbstop.setDirection(Servo.Direction.REVERSE);
-        lhoodtilt.setDirection(Servo.Direction.REVERSE);
-
-        lhoodtilt.setPosition(MIN_TILT);
-        rbstop.setPosition(0.15);
-        lbstop.setPosition(0.15);
+        setHoodServo(ShooterConfig.SHOOTER_HOOD_DOWN_SERVO);
+        rbstop.setPosition(RobotHardwareConfig.BEAM_STOP_CLOSED_POSITION);
+        lbstop.setPosition(RobotHardwareConfig.BEAM_STOP_CLOSED_POSITION);
 
         solidRed.setBrightness(100);
         solidRed.setStartIndex(0);
@@ -391,15 +393,18 @@ public class RedGoalAuto extends OpMode {
     @Override
     public void loop() {
         follower.update();
-        flywheel.Update();
+        shooterSubsystem.update();
         statePathUpdate();
 
     }
 
     @Override
     public void stop() {
+        shooterSubsystem.stop();
         prism.clearAllAnimations();
         prism.updateAllAnimations();
     }
 
 }
+
+

@@ -7,8 +7,8 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.teamcode.subsystems.ShooterSubsystem;
 
 @Configurable
-@TeleOp(name = "turret red", group = "Competition")
-public class TurretRed extends OpMode {
+@TeleOp(name = "Turret Control", group = "Competition")
+public class TurretControl extends OpMode {
     private final RobotHardwareConfig robot = new RobotHardwareConfig();
     private final ControlsConfig.ShooterInputReader shooterInputReader = new ControlsConfig.ShooterInputReader();
     private final ControlsConfig.ShooterInput shooterInput = new ControlsConfig.ShooterInput();
@@ -18,7 +18,7 @@ public class TurretRed extends OpMode {
     public void init() {
         ControlsConfig.validateAndThrow(telemetry);
         shooterSubsystem = new ShooterSubsystem(robot);
-        shooterSubsystem.init(hardwareMap, RobotHardwareConfig.LIMELIGHT_RED_TELEOP_PIPELINE);
+        shooterSubsystem.init(hardwareMap, RobotHardwareConfig.LIMELIGHT_TURRET_PIPELINE);
         shooterSubsystem.setAutoAimMode();
     }
 

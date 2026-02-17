@@ -7,11 +7,15 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 @TeleOp(name = "Flywheeltest", group = "Competition")
 
 public class flywheelTest extends OpMode {
+    private final RobotHardwareConfig robot = new RobotHardwareConfig();
     public DcMotor intake, flywheel;
     @Override
     public void init(){
-        intake = hardwareMap.get(DcMotor.class, "intake");
-        flywheel = hardwareMap.get(DcMotor.class, "flywheel");
+        robot.initIntake(hardwareMap);
+        robot.initSingleFlywheel(hardwareMap);
+
+        intake = robot.intake;
+        flywheel = robot.flywheel;
 
         intake.setPower(1);
         flywheel.setPower(0);

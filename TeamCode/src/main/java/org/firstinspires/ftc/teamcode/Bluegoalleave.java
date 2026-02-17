@@ -9,7 +9,6 @@ import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -18,10 +17,12 @@ import org.firstinspires.ftc.teamcode.Prism.Color;
 import org.firstinspires.ftc.teamcode.Prism.GoBildaPrismDriver;
 import org.firstinspires.ftc.teamcode.Prism.PrismAnimations;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.subsystems.ShooterSubsystem;
 
 @Configurable
 @Autonomous(name = "Back up fib", group = "Competition")
 public class Bluegoalleave extends OpMode {
+    private final RobotHardwareConfig robot = new RobotHardwareConfig();
     private Follower follower; // Pedro Pathing follower instance
     private Timer pathTimer;
     ElapsedTime stateTimer = new ElapsedTime();
@@ -39,12 +40,9 @@ public class Bluegoalleave extends OpMode {
         END
     }
 
-    private DualPidMotor flywheel;
+    private ShooterSubsystem shooterSubsystem;
     private DcMotorEx intake;
-    private Servo lbstop, rbstop, lhoodtilt, rhoodtilt;
-    private static final double MIN_TILT = 0.02;
-    private static double HOOD_TILT = .34;
-    private static double FLYWHEEL_RPM = 2300;
+    private Servo lbstop, rbstop;
     public static double SHOOT_TIME = 3400;
     public static double INTAKE_RPM = 575;
     public static double INTAKE_SHOOT_RPM = 550;
@@ -85,21 +83,21 @@ public class Bluegoalleave extends OpMode {
         pathState = PathState.DRIVE_STARTPOS_SHOOTPOS;
         pathTimer = new Timer();
         follower = Constants.createFollower(hardwareMap);
-        flywheel = new DualPidMotor (hardwareMap, "topflywheel", "bottomflywheel");
-        lhoodtilt = hardwareMap.get(Servo.class, "lhoodtilt");
-        rhoodtilt = hardwareMap.get(Servo.class, "rhoodtilt");
-        intake = hardwareMap.get(DcMotorEx.class, "intake");
-        lbstop = hardwareMap.get(Servo.class, "lbstop");
-        rbstop = hardwareMap.get(Servo.class, "rbstop");
-        prism = hardwareMap.get(GoBildaPrismDriver.class,"prism");
+        shooterSubsystem = new ShooterSubsystem(robot);
+        shooterSubsystem.init(hardwareMap, RobotHardwareConfig.LIMELIGHT_BLUE_TELEOP_PIPELINE);
+        shooterSubsystem.setManualMode();
 
-        intake.setDirection(DcMotor.Direction.REVERSE);
-        rbstop.setDirection(Servo.Direction.REVERSE);
-        lhoodtilt.setDirection(Servo.Direction.REVERSE);
+        robot.initIntake(hardwareMap);
+        robot.initBeamStopServos(hardwareMap);
+        robot.initPrism(hardwareMap);
 
-        lhoodtilt.setPosition(MIN_TILT);
-        rbstop.setPosition(0.15);
-        lbstop.setPosition(0.15);
+        intake = robot.intake;
+        lbstop = robot.lbstop;
+        rbstop = robot.rbstop;
+        prism = robot.prism;
+
+        rbstop.setPosition(RobotHardwareConfig.BEAM_STOP_CLOSED_POSITION);
+        lbstop.setPosition(RobotHardwareConfig.BEAM_STOP_CLOSED_POSITION);
 
         solidRed.setBrightness(100);
         solidRed.setStartIndex(0);
@@ -139,13 +137,14 @@ public class Bluegoalleave extends OpMode {
     @Override
     public void loop() {
         follower.update();
-        flywheel.Update();
+        shooterSubsystem.update();
         statePathUpdate();
 
     }
 
     @Override
     public void stop() {
+        shooterSubsystem.stop();
         prism.clearAllAnimations();
         prism.updateAllAnimations();
     }
